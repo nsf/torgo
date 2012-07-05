@@ -96,7 +96,7 @@ func (ctx *view_tool_context) p2(s ...interface{}) {
 }
 
 func (ctx *view_tool_context) error_file_or_dir(name string, err error) {
-	if ctx.tabber {
+	if ctx.tabber != nil {
 		ctx.p(color_white_bold, name, color_none)
 		fmt.Fprintf(ctx.tabber, " (error: %s)\n", err.Error())
 	} else {
