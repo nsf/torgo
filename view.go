@@ -96,8 +96,13 @@ func (ctx *view_tool_context) p2(s ...interface{}) {
 }
 
 func (ctx *view_tool_context) error_file_or_dir(name string, err error) {
-	ctx.p(color_white_bold, name, color_none)
-	fmt.Fprintf(ctx.tabber, " (error: %s)\n", err.Error())
+	if ctx.tabber {
+		ctx.p(color_white_bold, name, color_none)
+		fmt.Fprintf(ctx.tabber, " (error: %s)\n", err.Error())
+	} else {
+		ctx.p2(color_white_bold, name, color_none)
+		fmt.Fprintf(ctx.stdout, " (error: %s)\n", err.Error())
+	}
 }
 
 func (ctx *view_tool_context) show_short(filename string, mi *torrent.MetaInfo) {
