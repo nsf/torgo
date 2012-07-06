@@ -82,6 +82,7 @@ func tabs(n int) string {
 type view_tool_context struct {
 	mode view_mode
 	out func(...interface{})
+	recursive bool
 }
 
 func (ctx *view_tool_context) error_file_or_dir(name string, err error) {
@@ -246,6 +247,11 @@ func (ctx *view_tool_context) show_file(filename string) {
 
 func (ctx *view_tool_context) show_dir(dirname string) {
 	walker := func(path string, info os.FileInfo, err error) error {
+		// skip directories in a non-recursive mode
+		if info.IsDir() && !ctx.recursive {
+			return filepath.SkipDir
+		}
+
 		// skip bad files
 		if err != nil {
 			return nil
@@ -260,6 +266,7 @@ func (ctx *view_tool_context) show_dir(dirname string) {
 }
 
 func view_tool() {
+	var ctx view_tool_context
 	var (
 		no_colors bool
 		short bool
@@ -269,7 +276,7 @@ func view_tool() {
 
 	fs := flag.NewFlagSet("view tool", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, "%s view [<options>] <file or dir...>\n\n",
+		fmt.Fprintf(os.Stderr, "%s view [<options>] [<file or dir...>]\n\n",
 			os.Args[0])
 		tabber := tabwriter.NewWriter(os.Stderr, 0, 0, 4, ' ', 0)
 		fs.VisitAll(func (f *flag.Flag) {
@@ -278,6 +285,7 @@ func view_tool() {
 		tabber.Flush()
 	}
 
+	fs.BoolVar(&ctx.recursive, "r", false, "inspect directories recursively")
 	fs.BoolVar(&no_colors, "n", false,
 		"don't use terminal colors")
 	fs.BoolVar(&short, "s", false,
@@ -292,7 +300,6 @@ func view_tool() {
 		clear_colors()
 	}
 
-	var ctx view_tool_context
 	switch {
 	case short:
 		tabber := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
