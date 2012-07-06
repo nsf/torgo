@@ -1,8 +1,8 @@
-package main
+package make
 
 import "os"
 
-func make_tool() {
+func Tool() {
 	println("make tool is not implemented yet")
 	os.Exit(1)
 }

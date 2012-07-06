@@ -1,8 +1,8 @@
-package main
+package client
 
 import "os"
 
-func client_tool() {
+func Tool() {
 	println("client tool is not implemented yet")
 	os.Exit(1)
 }

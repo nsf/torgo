@@ -1,17 +1,19 @@
 package main
 
 import "os"
+import "github.com/nsf/torgo/view"
+import "github.com/nsf/torgo/make"
+import "github.com/nsf/torgo/client"
 
 func dispatch_command() {
 	switch os.Args[1] {
 	case "make":
-		make_tool()
+		make.Tool()
 	case "view":
-		view_tool()
+		view.Tool()
 	case "client":
-		client_tool()
+		client.Tool()
 	case "-h", "--help", "help":
-		// TODO
 	default:
 		println("unknown command: " + os.Args[1])
 		os.Exit(1)
@@ -20,7 +22,7 @@ func dispatch_command() {
 
 func main() {
 	if len(os.Args) == 1 {
-		client_tool()
+		client.Tool()
 	}
 	dispatch_command()
 }

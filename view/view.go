@@ -1,4 +1,4 @@
-package main
+package view
 
 import (
 	"github.com/dustin/go-humanize"
@@ -267,7 +267,7 @@ func (ctx *view_tool_context) show_dir(dirname string) {
 	filepath.Walk(dirname, walker)
 }
 
-func view_tool() {
+func Tool() {
 	var ctx view_tool_context
 	var (
 		no_colors bool
