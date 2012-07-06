@@ -89,13 +89,13 @@ func (ctx *view_tool_context) error_file_or_dir(name string, err error) {
 }
 
 func (ctx *view_tool_context) show_short(filename string, mi *torrent.MetaInfo) {
-	ctx.out(color_white_bold, filename, color_none)
-
 	var name, length string
+	var nfiles int
 	switch info := mi.Info.(type) {
 	case torrent.SingleFile:
 		name = info.Name
 		length = humanize.IBytes(uint64(info.Length))
+		nfiles = 1
 	case torrent.MultiFile:
 		name = info.Name
 		total_size := int64(0)
@@ -103,11 +103,17 @@ func (ctx *view_tool_context) show_short(filename string, mi *torrent.MetaInfo) 
 			total_size += f.Length
 		}
 		length = humanize.IBytes(uint64(total_size))
+		nfiles = len(info.Files)
 	}
 
-	ctx.out("\t(", color_yellow, name, color_none,
-		")\t[", color_cyan, length, color_none,
-		"]\n")
+	ctx.out(color_white_bold, filename, color_none, "\n",
+		"    ", color_yellow, name, color_none,
+		" (", color_cyan, length, color_none, " in ", nfiles)
+	if nfiles == 1 {
+		ctx.out(" file)\n")
+	} else {
+		ctx.out(" files)\n")
+	}
 }
 
 func (ctx *view_tool_context) show_basic(filename string, mi *torrent.MetaInfo) {
@@ -275,7 +281,7 @@ func view_tool() {
 	fs.BoolVar(&no_colors, "n", false,
 		"don't use terminal colors")
 	fs.BoolVar(&short, "s", false,
-		"short output, one line per file")
+		"short output, two lines per file, brief info")
 	fs.BoolVar(&basic, "b", true,
 		"basic output, a couple of lines per file (default)")
 	fs.BoolVar(&long, "l", false,
