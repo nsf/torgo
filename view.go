@@ -234,7 +234,9 @@ func (ctx *view_tool_context) show_file(filename string) {
 		return
 	}
 
-	_, filename = filepath.Split(filename)
+	if !ctx.recursive {
+		_, filename = filepath.Split(filename)
+	}
 	switch ctx.mode {
 	case view_short:
 		ctx.show_short(filename, mi)
@@ -248,7 +250,7 @@ func (ctx *view_tool_context) show_file(filename string) {
 func (ctx *view_tool_context) show_dir(dirname string) {
 	walker := func(path string, info os.FileInfo, err error) error {
 		// skip directories in a non-recursive mode
-		if info.IsDir() && !ctx.recursive {
+		if info.IsDir() && !ctx.recursive && path != dirname {
 			return filepath.SkipDir
 		}
 
