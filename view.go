@@ -81,32 +81,15 @@ func tabs(n int) string {
 
 type view_tool_context struct {
 	mode view_mode
-	tabber *tabwriter.Writer
-	stdout *bufio.Writer
-}
-
-// prints into tabber
-func (ctx *view_tool_context) p(s ...interface{}) {
-	fmt.Fprint(ctx.tabber, s...)
-}
-
-// prints into stdout
-func (ctx *view_tool_context) p2(s ...interface{}) {
-	fmt.Fprint(ctx.stdout, s...)
+	out func(...interface{})
 }
 
 func (ctx *view_tool_context) error_file_or_dir(name string, err error) {
-	if ctx.tabber != nil {
-		ctx.p(color_white_bold, name, color_none)
-		fmt.Fprintf(ctx.tabber, " (error: %s)\n", err.Error())
-	} else {
-		ctx.p2(color_white_bold, name, color_none)
-		fmt.Fprintf(ctx.stdout, " (error: %s)\n", err.Error())
-	}
+	ctx.out(color_white_bold, name, color_none, " (error: ", err, ")\n")
 }
 
 func (ctx *view_tool_context) show_short(filename string, mi *torrent.MetaInfo) {
-	ctx.p(color_white_bold, filename, color_none)
+	ctx.out(color_white_bold, filename, color_none)
 
 	var name, length string
 	switch info := mi.Info.(type) {
@@ -122,14 +105,14 @@ func (ctx *view_tool_context) show_short(filename string, mi *torrent.MetaInfo) 
 		length = humanize.IBytes(uint64(total_size))
 	}
 
-	ctx.p("\t(", color_yellow, name, color_none,
+	ctx.out("\t(", color_yellow, name, color_none,
 		")\t[", color_cyan, length, color_none,
 		"]\n")
 }
 
 func (ctx *view_tool_context) show_basic(filename string, mi *torrent.MetaInfo) {
 	// torrent file name
-	ctx.p(color_white_bold, filename, color_none, "\n")
+	ctx.out(color_white_bold, filename, color_none, "\n")
 
 	var name string
 	switch info := mi.Info.(type) {
@@ -140,101 +123,101 @@ func (ctx *view_tool_context) show_basic(filename string, mi *torrent.MetaInfo) 
 	}
 
 	// torrent name
-	ctx.p(color_green_bold, "\tname\t", color_none,
+	ctx.out(color_green_bold, "\tname\t", color_none,
 		color_yellow, name, color_none, "\n")
 
 	// tracker url
-	ctx.p(color_green_bold, "\ttracker url\t", color_none,
+	ctx.out(color_green_bold, "\ttracker url\t", color_none,
 		mi.AnnounceList[0][0], "\n")
 
 	// created by
-	ctx.p(color_green_bold, "\tcreated by\t", color_none,
+	ctx.out(color_green_bold, "\tcreated by\t", color_none,
 		mi.CreatedBy, "\n")
 
 	// created on
-	ctx.p(color_green_bold, "\tcreated on\t", color_none,
+	ctx.out(color_green_bold, "\tcreated on\t", color_none,
 		color_magenta, mi.CreationDate, color_none, "\n")
 
 	switch info := mi.Info.(type) {
 	case torrent.SingleFile:
-		ctx.p(color_green_bold, "\tfile name\t", color_none,
+		ctx.out(color_green_bold, "\tfile name\t", color_none,
 			info.Name, "\n")
-		ctx.p(color_green_bold, "\tfile size\t", color_none,
+		ctx.out(color_green_bold, "\tfile size\t", color_none,
 			color_cyan, humanize.IBytes(uint64(info.Length)), color_none, "\n")
 	case torrent.MultiFile:
 		total_size := int64(0)
 		for _, f := range info.Files {
 			total_size += f.Length
 		}
-		ctx.p(color_green_bold, "\tnum files\t", color_none,
+		ctx.out(color_green_bold, "\tnum files\t", color_none,
 			len(info.Files), "\n")
-		ctx.p(color_green_bold, "\ttotal size\t", color_none,
+		ctx.out(color_green_bold, "\ttotal size\t", color_none,
 			color_cyan, humanize.IBytes(uint64(total_size)), color_none, "\n")
 	}
 
-	ctx.p("\n")
+	ctx.out("\n")
 }
 
 func (ctx *view_tool_context) show_long(filename string, mi *torrent.MetaInfo) {
 	// torrent file name
-	ctx.p2(color_white_bold, filename, color_none, "\n")
+	ctx.out(color_white_bold, filename, color_none, "\n")
 
 	// announce groups
-	ctx.p2(color_green_bold, tabs(1), "announce groups", color_none, "\n")
+	ctx.out(color_green_bold, tabs(1), "announce groups", color_none, "\n")
 	for i, ag := range mi.AnnounceList {
-		ctx.p2(color_yellow_bold, tabs(2), i, color_none, "\n")
+		ctx.out(color_yellow_bold, tabs(2), i, color_none, "\n")
 		for _, a := range ag {
-			ctx.p2(tabs(3), a, "\n")
+			ctx.out(tabs(3), a, "\n")
 		}
 	}
 
 	// created on
-	ctx.p2(color_green_bold, tabs(1), "created on", color_none, "\n",
+	ctx.out(color_green_bold, tabs(1), "created on", color_none, "\n",
 		tabs(2), mi.CreationDate, "\n")
 
 	// comment
 	if mi.Comment != "" {
-		ctx.p2(color_green_bold, tabs(1), "comment", color_none, "\n",
+		ctx.out(color_green_bold, tabs(1), "comment", color_none, "\n",
 			tabs(2), mi.Comment, "\n")
 	}
 
 	// created by
 	if mi.CreatedBy != "" {
-		ctx.p2(color_green_bold, tabs(1), "created by", color_none, "\n",
+		ctx.out(color_green_bold, tabs(1), "created by", color_none, "\n",
 			tabs(2), mi.CreatedBy, "\n")
 	}
 
 	// encoding
 	if mi.Encoding != "" {
-		ctx.p2(color_green_bold, tabs(1), "encoding", color_none, "\n",
+		ctx.out(color_green_bold, tabs(1), "encoding", color_none, "\n",
 			tabs(2), mi.Encoding, "\n")
 	}
 
 	// url list
 	if len(mi.URLList) > 0 {
-		ctx.p2(color_green_bold, tabs(1), "webseed urls", color_none, "\n")
+		ctx.out(color_green_bold, tabs(1), "webseed urls", color_none, "\n")
 		for _, url := range mi.URLList {
-			ctx.p2(tabs(2), url, "\n")
+			ctx.out(tabs(2), url, "\n")
 		}
 	}
 
 	switch info := mi.Info.(type) {
 	case torrent.SingleFile:
-		ctx.p2(color_green_bold, tabs(1), "name (single file)", color_none, "\n",
+		ctx.out(color_green_bold, tabs(1), "name", color_none, " (single file)\n",
 			tabs(2), color_yellow, info.Name, color_none, "\n")
-		ctx.p2(color_green_bold, tabs(1), "length", color_none, "\n",
+		ctx.out(color_green_bold, tabs(1), "length", color_none, "\n",
 			tabs(2), color_cyan, humanize.IBytes(uint64(info.Length)), color_none, "\n")
 	case torrent.MultiFile:
-		ctx.p2(color_green_bold, tabs(1), "name (multiple files)", color_none, "\n",
+		ctx.out(color_green_bold, tabs(1), "name", color_none, " (multiple files)\n",
 			tabs(2), color_yellow, info.Name, color_none, "\n")
-		ctx.p2(color_green_bold, tabs(1), "files (", len(info.Files), ")", color_none, "\n")
+		ctx.out(color_green_bold, tabs(1), "files", color_none, " (", len(info.Files), ")\n")
 		for _, f := range info.Files {
-			ctx.p2(tabs(2), filepath.Join(f.Path...),
+			ctx.out(tabs(2), filepath.Join(f.Path...),
 				" (", color_cyan, humanize.IBytes(uint64(f.Length)), color_none, ")\n")
 		}
 	}
 
-	ctx.p2("\n")
+	ctx.out("\n")
 }
 
 func (ctx *view_tool_context) show_file(filename string) {
@@ -282,7 +265,11 @@ func view_tool() {
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s view [<options>] <file or dir...>\n\n",
 			os.Args[0])
-		fs.PrintDefaults()
+		tabber := tabwriter.NewWriter(os.Stderr, 0, 0, 4, ' ', 0)
+		fs.VisitAll(func (f *flag.Flag) {
+			fmt.Fprintf(tabber, "  -%s\t%s\n", f.Name, f.Usage)
+		})
+		tabber.Flush()
 	}
 
 	fs.BoolVar(&no_colors, "n", false,
@@ -290,7 +277,7 @@ func view_tool() {
 	fs.BoolVar(&short, "s", false,
 		"short output, one line per file")
 	fs.BoolVar(&basic, "b", true,
-		"basic output, a couple of lines per file")
+		"basic output, a couple of lines per file (default)")
 	fs.BoolVar(&long, "l", false,
 		"long output, prints every bit of information")
 	fs.Parse(os.Args[2:])
@@ -307,15 +294,25 @@ func view_tool() {
 	var ctx view_tool_context
 	switch {
 	case short:
-		ctx.tabber = tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+		tabber := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+		defer tabber.Flush()
+		ctx.out = func(args ...interface{}) {
+			fmt.Fprint(tabber, args...)
+		}
 		ctx.mode = view_short
 	case long:
-		ctx.stdout = bufio.NewWriter(os.Stdout)
+		stdout := bufio.NewWriter(os.Stdout)
+		defer stdout.Flush()
+		ctx.out = func(args ...interface{}) {
+			fmt.Fprint(stdout, args...)
+		}
 		ctx.mode = view_long
-	case basic:
-		fallthrough
 	default:
-		ctx.tabber = tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+		tabber := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+		defer tabber.Flush()
+		ctx.out = func(args ...interface{}) {
+			fmt.Fprint(tabber, args...)
+		}
 		ctx.mode = view_basic
 	}
 
@@ -331,12 +328,5 @@ func view_tool() {
 		} else {
 			ctx.show_file(arg)
 		}
-	}
-
-	if ctx.tabber != nil {
-		ctx.tabber.Flush()
-	}
-	if ctx.stdout != nil {
-		ctx.stdout.Flush()
 	}
 }
