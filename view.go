@@ -282,11 +282,6 @@ func view_tool() {
 		"long output, prints every bit of information")
 	fs.Parse(os.Args[2:])
 
-	if fs.NArg() == 0 {
-		fs.Usage()
-		return
-	}
-
 	if no_colors {
 		clear_colors()
 	}
@@ -314,6 +309,10 @@ func view_tool() {
 			fmt.Fprint(tabber, args...)
 		}
 		ctx.mode = view_basic
+	}
+
+	if fs.NArg() == 0 {
+		ctx.show_dir(".")
 	}
 
 	for _, arg := range fs.Args() {
