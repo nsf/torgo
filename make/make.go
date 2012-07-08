@@ -90,89 +90,103 @@ func (this *simple_progress_reporter) end() {
 type advanced_progress_reporter struct {
 	width int
 	sampler sampler
-	lasttime time.Time
-	lastdone int64
+	start_time time.Time
+	last_time time.Time
+	last_done int64
 	out *bufio.Writer
 	total int64
 }
 
 func (this *advanced_progress_reporter) begin() {
-	this.sampler = make(sampler, 0, 10)
-	this.lasttime = time.Now()
-	this.lastdone = 0
+	this.sampler = make(sampler, 0, 5)
+	this.last_time = time.Now()
+	this.start_time = this.last_time
+	this.last_done = 0
 	this.out = bufio.NewWriter(os.Stdout)
 }
 
+// 1000KiB  1000MiB/s 00:00:00 [#################------------------]  51%
 // [   0B/1000KiB] 1000MiB/s [==================>-------------------------]
 func (this *advanced_progress_reporter) report(done, total int64) {
 	this.total = total
 
 	now := time.Now()
-	delta_time := now.Sub(this.lasttime)
-	this.lasttime = now
+	delta_time := now.Sub(this.last_time)
+	this.last_time = now
 
-	delta_done := done - this.lastdone
-	this.lastdone = done
+	time_since_start := now.Sub(this.start_time)
+
+	delta_done := done - this.last_done
+	this.last_done = done
 
 	speed := int64(float64(delta_done) / delta_time.Seconds())
 	this.sampler.add_sample(speed)
 
 	done_h := humanize.IBytes(uint64(done))
-	total_h := humanize.IBytes(uint64(total))
 
 	w := this.width
-	// reserve one space on each side
-	w -= 2
-	this.out.WriteString("\r ")
+
+	// reserve one space in the beginning
+	w -= 1
+	this.out.WriteString(" ")
 
 	// reserve space for bytes progress counter:
-	// [/] (3) + 1000KiB (7) * 2 + ' ' == 18
-	w -= 18
-	fmt.Fprintf(this.out, "[%15s] ",
-		fmt.Sprintf("%s/%s", done_h, total_h))
+	// 1000KiB (7) + ' ' (1)
+	w -= 8
+	fmt.Fprintf(this.out, "%7s ", done_h)
 
 	// reserve space for speed value: 1000KiB/s + ' ' (10)
 	w -= 10
 	fmt.Fprintf(this.out, "%7s/s ",
 		humanize.IBytes(uint64(this.sampler.average())))
+
+	// reserve space for time since start: 00:00:00 (8) + ' ' (1)
+	w -= 9
+	var t time.Time
+	t = t.Add(time_since_start)
+	fmt.Fprint(this.out, t.Format("15:04:05 "))
 
 	// and now the progress bar, reserve space for [] (2) and for ' ' + 100%
 	// (5) == 7
 	w -= 7
 	this.out.WriteString("[")
 	donecharw := int(float64(done) / float64(total) * float64(w))
-	for i := 0; i < donecharw - 1; i++ {
-		this.out.WriteByte('=')
-	}
-	if donecharw > 0 {
-		this.out.WriteByte('>')
+	for i := 0; i < donecharw; i++ {
+		this.out.WriteByte('#')
 	}
 	for i := 0; i < w - donecharw; i++ {
 		this.out.WriteByte('-')
 	}
 	this.out.WriteString("] ")
-	fmt.Fprintf(this.out, "%3d%%",
+	fmt.Fprintf(this.out, "%3d%%\r",
 		int(float64(done) / float64(total) * 100))
 	this.out.Flush()
 }
 
 func (this *advanced_progress_reporter) end() {
 	total_h := humanize.IBytes(uint64(this.total))
+	time_since_start := time.Since(this.start_time)
+
 	w := this.width
-	// reserve one space on each side
-	w -= 2
-	this.out.WriteString("\r ")
+	// reserve one space in the beginning
+	w -= 1
+	this.out.WriteString(" ")
 
 	// reserve space for bytes progress counter:
-	// [/] (3) + 1000KiB (7) * 2 + ' ' == 18
-	w -= 18
-	fmt.Fprintf(this.out, "[%15s] ",
-		fmt.Sprintf("%s/%s", total_h, total_h))
+	// 1000KiB (7) + ' ' (1)
+	w -= 8
+	fmt.Fprintf(this.out, "%7s ", total_h)
 
 	// reserve space for speed value: 1000KiB/s + ' ' (10)
 	w -= 10
 	fmt.Fprintf(this.out, "%7s/s ",
 		humanize.IBytes(uint64(this.sampler.average())))
+
+	// reserve space for time since start: 00:00:00 (8) + ' ' (1)
+	w -= 9
+	var t time.Time
+	t = t.Add(time_since_start)
+	fmt.Fprint(this.out, t.Format("15:04:05 "))
 
 	// and now the progress bar, reserve space for [] (2) and for ' ' + 100%
 	// (5) == 7
