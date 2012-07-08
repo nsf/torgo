@@ -34,6 +34,10 @@ func (sp *sampler) add_sample(sample int64) {
 }
 
 func (sp *sampler) average() int64 {
+	if len(*sp) == 0 {
+		return 0
+	}
+
 	sum := int64(0)
 	for _, s := range *sp {
 		sum += s
