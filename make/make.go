@@ -258,7 +258,8 @@ func Tool() {
 
 	fs := flag.NewFlagSet("make tool", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s make [<options>] <file or dir...>\n\n",
+		fmt.Fprintf(os.Stderr,
+			"Usage: %s make -a <url>[,<url>] [<options>] <file or dir...>\n\n",
 			os.Args[0])
 		fmt.Fprintln(os.Stderr, "Options:")
 		tabber := tabwriter.NewWriter(os.Stderr, 0, 0, 2, ' ', 0)
