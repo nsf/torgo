@@ -281,7 +281,7 @@ func Tool() {
 		fmt.Fprintf(os.Stderr, "Usage: %s view [<options>] [<file or dir...>]\n\n",
 			os.Args[0])
 		fmt.Fprintln(os.Stderr, "Options:")
-		tabber := tabwriter.NewWriter(os.Stderr, 0, 0, 4, ' ', 0)
+		tabber := tabwriter.NewWriter(os.Stderr, 0, 0, 2, ' ', 0)
 		fs.VisitAll(func (f *flag.Flag) {
 			fmt.Fprintf(tabber, "  -%s\t%s\n", f.Name, f.Usage)
 		})
