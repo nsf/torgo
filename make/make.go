@@ -88,7 +88,6 @@ func (this *simple_progress_reporter) end() {
 //----------------------------------------------------------------------------
 
 type advanced_progress_reporter struct {
-	width int
 	sampler sampler
 	start_time time.Time
 	last_time time.Time
@@ -106,7 +105,6 @@ func (this *advanced_progress_reporter) begin() {
 }
 
 // 1000KiB  1000MiB/s 00:00:00 [#################------------------]  51%
-// [   0B/1000KiB] 1000MiB/s [==================>-------------------------]
 func (this *advanced_progress_reporter) report(done, total int64) {
 	this.total = total
 
@@ -124,7 +122,7 @@ func (this *advanced_progress_reporter) report(done, total int64) {
 
 	done_h := humanize.IBytes(uint64(done))
 
-	w := this.width
+	w := get_terminal_width()
 
 	// reserve one space in the beginning
 	w -= 1
@@ -167,7 +165,7 @@ func (this *advanced_progress_reporter) end() {
 	total_h := humanize.IBytes(uint64(this.total))
 	time_since_start := time.Since(this.start_time)
 
-	w := this.width
+	w := get_terminal_width()
 	// reserve one space in the beginning
 	w -= 1
 	this.out.WriteString(" ")
@@ -355,12 +353,10 @@ func Tool() {
 	// get terminal width and select progress reporter
 	var reporter progress_reporter
 	termw := get_terminal_width()
-	if termw < 80 {
+	if termw < 40 {
 		reporter = &simple_progress_reporter{}
 	} else {
-		reporter = &advanced_progress_reporter{
-			width: termw,
-		}
+		reporter = &advanced_progress_reporter{}
 	}
 
 	// create the batch
