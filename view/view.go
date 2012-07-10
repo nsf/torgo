@@ -90,28 +90,21 @@ func error_file_or_dir(name string, err error) {
 }
 
 func show_short(filename string, mi *torrent.MetaInfo) {
-	var name, length string
-	var nfiles int
-
-	switch info := mi.Info.(type) {
-	case torrent.SingleFile:
-		name = info.Name
-		length = humanize.IBytes(uint64(info.Length))
-		nfiles = 1
-	case torrent.MultiFile:
-		name = info.Name
+	var length string
+	if len(mi.Files) == 1 {
+		length = humanize.IBytes(uint64(mi.Files[0].Length))
+	} else {
 		total_size := int64(0)
-		for _, f := range info.Files {
+		for _, f := range mi.Files {
 			total_size += f.Length
 		}
 		length = humanize.IBytes(uint64(total_size))
-		nfiles = len(info.Files)
 	}
 
 	out(color_white_bold, filename, color_none, "\n",
-		"    ", color_yellow, name, color_none,
-		" (", color_cyan, length, color_none, " in ", nfiles)
-	if nfiles == 1 {
+		"    ", color_yellow, mi.Name, color_none,
+		" (", color_cyan, length, color_none, " in ", len(mi.Files))
+	if len(mi.Files) == 1 {
 		out(" file)\n")
 	} else {
 		out(" files)\n")
@@ -122,17 +115,9 @@ func show_basic(filename string, mi *torrent.MetaInfo) {
 	// torrent file name
 	out(color_white_bold, filename, color_none, "\n")
 
-	var name string
-	switch info := mi.Info.(type) {
-	case torrent.SingleFile:
-		name = info.Name
-	case torrent.MultiFile:
-		name = info.Name
-	}
-
 	// torrent name
 	out(color_green_bold, "\tname\t", color_none,
-		color_yellow, name, color_none, "\n")
+		color_yellow, mi.Name, color_none, "\n")
 
 	// tracker url
 	out(color_green_bold, "\ttracker url\t", color_none,
@@ -146,19 +131,18 @@ func show_basic(filename string, mi *torrent.MetaInfo) {
 	out(color_green_bold, "\tcreated on\t", color_none,
 		color_magenta, mi.CreationDate, color_none, "\n")
 
-	switch info := mi.Info.(type) {
-	case torrent.SingleFile:
+	if len(mi.Files) == 1 {
 		out(color_green_bold, "\tfile name\t", color_none,
-			info.Name, "\n")
+			mi.Name, "\n")
 		out(color_green_bold, "\tfile size\t", color_none,
-			color_cyan, humanize.IBytes(uint64(info.Length)), color_none, "\n")
-	case torrent.MultiFile:
+			color_cyan, humanize.IBytes(uint64(mi.Files[0].Length)), color_none, "\n")
+	} else {
 		total_size := int64(0)
-		for _, f := range info.Files {
+		for _, f := range mi.Files {
 			total_size += f.Length
 		}
 		out(color_green_bold, "\tnum files\t", color_none,
-			len(info.Files), "\n")
+			len(mi.Files), "\n")
 		out(color_green_bold, "\ttotal size\t", color_none,
 			color_cyan, humanize.IBytes(uint64(total_size)), color_none, "\n")
 	}
@@ -202,24 +186,23 @@ func show_long(filename string, mi *torrent.MetaInfo) {
 	}
 
 	// url list
-	if len(mi.URLList) > 0 {
+	if len(mi.WebSeedURLs) > 0 {
 		out(color_green_bold, tabs(1), "webseed urls", color_none, "\n")
-		for _, url := range mi.URLList {
+		for _, url := range mi.WebSeedURLs {
 			out(tabs(2), url, "\n")
 		}
 	}
 
-	switch info := mi.Info.(type) {
-	case torrent.SingleFile:
+	if len(mi.Files) == 1 {
 		out(color_green_bold, tabs(1), "name", color_none, " (single file)\n",
-			tabs(2), color_yellow, info.Name, color_none, "\n")
+			tabs(2), color_yellow, mi.Name, color_none, "\n")
 		out(color_green_bold, tabs(1), "length", color_none, "\n",
-			tabs(2), color_cyan, humanize.IBytes(uint64(info.Length)), color_none, "\n")
-	case torrent.MultiFile:
+			tabs(2), color_cyan, humanize.IBytes(uint64(mi.Files[0].Length)), color_none, "\n")
+	} else {
 		out(color_green_bold, tabs(1), "name", color_none, " (multiple files)\n",
-			tabs(2), color_yellow, info.Name, color_none, "\n")
-		out(color_green_bold, tabs(1), "files", color_none, " (", len(info.Files), ")\n")
-		for _, f := range info.Files {
+			tabs(2), color_yellow, mi.Name, color_none, "\n")
+		out(color_green_bold, tabs(1), "files", color_none, " (", len(mi.Files), ")\n")
+		for _, f := range mi.Files {
 			out(tabs(2), filepath.Join(f.Path...),
 				" (", color_cyan, humanize.IBytes(uint64(f.Length)), color_none, ")\n")
 		}
