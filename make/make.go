@@ -369,7 +369,7 @@ func Tool() {
 	// prepare file for .torrent output
 	if output == "" {
 		if name == "" {
-			output = batch.DefaultName + ".torrent"
+			output = batch.DefaultName() + ".torrent"
 		} else {
 			output = name + ".torrent"
 		}
@@ -387,7 +387,7 @@ func Tool() {
 	for {
 		select {
 		case hashed := <-status:
-			reporter.report(hashed, batch.TotalSize)
+			reporter.report(hashed, batch.TotalSize())
 			time.Sleep(250 * time.Millisecond)
 		case err := <-completion:
 			if err != nil {
